@@ -305,6 +305,7 @@ button:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
   function iso(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
   function cap(s){return s.charAt(0).toUpperCase()+s.slice(1)}
   function fmtLong(d){try{return cap(d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}))}catch(e){return iso(d)}}
+  function fmtSpoken(d){try{return cap(d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}))}catch(e){return iso(d)}}
   function fmtShort(d){try{return d.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric'})}catch(e){return iso(d)}}
   function dayDate(k){return addDays(refDate(),k==='hier'?-1:k==='demain'?1:0)}
 
@@ -408,7 +409,7 @@ button:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
     var pct=Math.round((s.xp-lo)/(hi-lo)*100);
     var next=g>=GOAL?'<div class="card stack"><div class="reply">Journée terminée ! Day complete. You earned +'+XP.goalDay+' XP.</div><button class="btn" data-nav="1">Next day '+svg('next',18)+'</button></div>':'';
     return '<div class="dnav"><button class="arrow" data-nav="-1" aria-label="Previous day">'+svg('left',22)+'</button>'+
-      '<div class="mid"><button class="date" data-say="'+esc(fmtLong(d))+'">'+fmtLong(d)+'</button><div class="rel">'+(off===0?"Aujourd'hui · today":(off>0?'+'+off:off)+' day'+(Math.abs(off)===1?'':'s')+' · <button data-nav="0">back to today</button>')+'</div></div>'+
+      '<div class="mid"><button class="date" data-say="'+esc(fmtSpoken(d))+'">'+fmtLong(d)+'</button><div class="rel">'+(off===0?"Aujourd'hui · today":(off>0?'+'+off:off)+' day'+(Math.abs(off)===1?'':'s')+' · <button data-nav="0">back to today</button>')+'</div></div>'+
       '<button class="arrow" data-nav="1" aria-label="Next day">'+svg('right',22)+'</button></div>'+
       '<div class="card hud"><div class="ringbox"><svg viewBox="0 0 62 62"><circle cx="31" cy="31" r="27" stroke="var(--blue-soft)"/><circle cx="31" cy="31" r="27" stroke="'+(g>=GOAL?'var(--good)':'var(--blue)')+'" stroke-linecap="round" stroke-dasharray="'+C+'" stroke-dashoffset="'+(C*(1-g/GOAL))+'"/></svg><b>'+g+'/'+GOAL+'</b></div>'+
       '<div class="xp"><div class="lv"><span>Niv. '+s.level+' · '+lvName+'</span><small>'+s.xp+' XP</small></div><div class="bar" role="progressbar" aria-valuenow="'+pct+'" aria-valuemin="0" aria-valuemax="100"><i style="width:'+pct+'%"></i></div><div class="tag">Say '+GOAL+' sentences out loud today</div></div>'+
@@ -520,7 +521,7 @@ button:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
       if(n===0)off=0;else off+=n;
       save('vie_off',off);
       if(n===1){log.push({ts:Date.now(),type:'nav',day:'',ref:iso(refDate()),key:''});save('vie_log',log);toast('Jour suivant · '+fmtLong(refDate()))}
-      go(cur,true);return;
+      go(cur,true);say(fmtSpoken(refDate()));return;
     }
     if(d.day){day=d.day;pick=null;Bd=newB();go('life',true);return}
     if(d.pick!==undefined){
