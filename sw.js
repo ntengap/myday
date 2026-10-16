@@ -1,5 +1,5 @@
 // Franglais offline cache. Change VERSION when you upload a new index.html.
-const VERSION = "mavie-v2";
+const VERSION = "mavie-v3";
 const FILES = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 
 self.addEventListener("install", (e) => {
