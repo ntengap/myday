@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Ma vie en français</title>
+<meta name="theme-color" content="#1d5fe0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Ma vie">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+/* Layout: one phone-width column. Top: date navigator and progress strip. Four tabs: My day, Routines, Patterns, Progress. */
+:root{
+  --bg:#eaf2fd; --card:#ffffff; --ink:#11264b; --muted:#506487; --line:#d6e2f5;
+  --blue:#1d5fe0; --blue-ink:#ffffff; --blue-soft:#e2ecff;
+  --sun:#f3ac22; --sun-soft:#fff3d6; --good:#17895a; --good-soft:#dcf4e8; --flame:#e8590c;
+  --shadow:0 6px 20px rgba(29,95,224,.10);
+  --display:'Fredoka','Trebuchet MS',system-ui,sans-serif;
+  --body:'Nunito',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0c1325; --card:#16213d; --ink:#e9f0ff; --muted:#a3b5da; --line:#2a3a64;
+  --blue:#5b8dff; --blue-ink:#071230; --blue-soft:#1d2d5a;
+  --sun:#f6bb4a; --sun-soft:#3b3115; --good:#4fd39b; --good-soft:#143a2e; --flame:#ff8a4c;
+  --shadow:0 6px 20px rgba(0,0,0,.35); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0c1325; --card:#16213d; --ink:#e9f0ff; --muted:#a3b5da; --line:#2a3a64;
+  --blue:#5b8dff; --blue-ink:#071230; --blue-soft:#1d2d5a;
+  --sun:#f6bb4a; --sun-soft:#3b3115; --good:#4fd39b; --good-soft:#143a2e; --flame:#ff8a4c;
+  --shadow:0 6px 20px rgba(0,0,0,.35); color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45}
+.app{max-width:440px;margin:0 auto;padding-inline:16px;padding-block:16px 120px}
+h1,h2{font-family:var(--display);font-weight:600;margin:0;text-wrap:balance;line-height:1.15}
+p{margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.logo{font-family:var(--display);font-weight:700;font-size:1.7rem;color:var(--blue);letter-spacing:-.5px}
+.tag{color:var(--muted);font-size:.9rem}
+.stack{display:flex;flex-direction:column;gap:14px}
+.card{background:var(--card);border-radius:20px;padding:16px;box-shadow:var(--shadow)}
+.row{display:flex;gap:12px}
+.row>*{flex:1;min-width:0}
+.eyebrow{font-size:.75rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.btn{background:var(--blue);color:var(--blue-ink);border:0;border-radius:14px;padding:14px 16px;font-weight:800;font-size:1rem;width:100%}
+.btn.ghost{background:var(--blue-soft);color:var(--blue)}
+.btn.sm{padding:10px 14px;width:auto;font-size:.9rem}
+.btn:disabled{opacity:.45;cursor:default}
+.hide{display:none!important}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+
+/* date navigator */
+.dnav{display:flex;align-items:center;gap:10px}
+.dnav .arrow{width:46px;height:46px;border-radius:14px;border:0;background:var(--card);box-shadow:var(--shadow);display:grid;place-items:center;flex:none;color:var(--blue)}
+.dnav .mid{flex:1;min-width:0;text-align:center}
+.dnav .date{font-family:var(--display);font-weight:600;font-size:1.25rem;border:0;background:none;color:var(--ink);padding:0}
+.dnav .rel{font-size:.8rem;color:var(--muted);font-weight:700}
+.dnav .rel button{border:0;background:none;color:var(--blue);font-weight:800;padding:0;text-decoration:underline}
+
+/* progress strip */
+.hud{display:flex;align-items:center;gap:14px}
+.hud .ringbox{position:relative;width:62px;height:62px;flex:none}
+.hud .ringbox svg{width:100%;height:100%;transform:rotate(-90deg)}
+.hud .ringbox circle{fill:none;stroke-width:7}
+.hud .ringbox b{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--display);font-size:1.05rem;font-variant-numeric:tabular-nums}
+.hud .xp{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.hud .lv{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-weight:800}
+.hud .lv small{color:var(--muted);font-weight:700}
+.streak{display:flex;flex-direction:column;align-items:center;color:var(--flame);font-weight:800;font-family:var(--display);line-height:1}
+.streak small{color:var(--muted);font-family:var(--body);font-weight:700;font-size:.7rem}
+.bar{height:12px;background:var(--blue-soft);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--blue);border-radius:99px;transition:width .3s}
+
+.seg{display:flex;gap:8px}
+.seg button{flex:1;border:2px solid transparent;border-radius:14px;padding:10px 6px;font-family:var(--display);font-weight:600;font-size:1.02rem;background:var(--blue-soft);color:var(--ink);line-height:1.2}
+.seg button small{display:block;font-family:var(--body);font-weight:700;font-size:.72rem;color:var(--muted)}
+.seg button[aria-pressed="true"]{border-color:var(--blue);background:var(--card)}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opts button{border:2px solid var(--line);background:var(--card);border-radius:12px;padding:10px 12px;font-weight:700;text-align:left}
+.opts button[aria-pressed="true"]{border-color:var(--blue);background:var(--blue-soft)}
+.sentence{font-size:1.4rem;font-weight:700;line-height:1.7}
+.fr{font:inherit;font-weight:800;color:var(--blue);background:var(--blue-soft);border:0;border-radius:8px;padding:0 6px;cursor:pointer}
+.play{display:flex;gap:12px;align-items:center;width:100%;background:var(--blue-soft);border:0;border-radius:14px;padding:12px 14px;font-weight:700;color:var(--ink);text-align:left}
+.play .dot{width:38px;height:38px;border-radius:50%;background:var(--blue);display:grid;place-items:center;flex:none}
+.reply{border-radius:14px;padding:12px 14px;background:var(--good-soft);font-weight:700}
+.reply.soft{background:var(--sun-soft)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.chips button{flex:none;border:0;border-radius:99px;padding:8px 14px;background:var(--card);font-weight:800;color:var(--muted);white-space:nowrap}
+.chips button[aria-pressed="true"]{background:var(--blue);color:var(--blue-ink)}
+.chips.wrap{flex-wrap:wrap;overflow:visible}
+
+/* routines */
+.tl{display:flex;flex-direction:column}
+.tl button{display:flex;gap:12px;align-items:center;text-align:left;border:0;background:none;padding:12px 0;border-bottom:1px solid var(--line)}
+.tl button:last-child{border-bottom:0}
+.tl .t{width:62px;flex:none;font-family:var(--display);font-weight:600;color:var(--blue);font-variant-numeric:tabular-nums}
+.tl .a{flex:1;min-width:0;font-weight:700}
+.tl .ck{width:26px;height:26px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;flex:none;color:var(--blue-ink)}
+.tl .ck.on{background:var(--good);border-color:var(--good)}
+.tl button[aria-pressed="true"] .a{color:var(--blue)}
+
+/* badges */
+.badges{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.badge{background:var(--card);border-radius:16px;padding:14px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:6px}
+.badge .ic{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--sun-soft);color:var(--sun)}
+.badge.lock{opacity:.55}
+.badge.lock .ic{background:var(--blue-soft);color:var(--muted)}
+.badge b{font-family:var(--display);font-weight:600;line-height:1.15}
+.badge small{color:var(--muted);font-weight:600;line-height:1.3}
+.stat{display:flex;flex-direction:column;gap:2px}
+.stat .num{font-family:var(--display);font-weight:600;font-size:1.9rem;line-height:1;font-variant-numeric:tabular-nums}
+.stat .lbl{color:var(--muted);font-size:.82rem;font-weight:700}
+
+/* patterns */
+.gr{display:block;width:100%;text-align:left;background:var(--blue-soft);border:0;border-radius:14px;padding:12px 14px;font-size:1.1rem;font-weight:700}
+.gr small{display:block;color:var(--muted);font-weight:600;font-size:.85rem;margin-top:2px}
+.gr .aux{background:var(--blue);color:var(--blue-ink);border-radius:6px;padding:0 6px}
+.gr .pp{text-decoration:underline;text-decoration-color:var(--sun);text-decoration-thickness:3px;text-underline-offset:3px}
+
+.toast{position:fixed;left:50%;bottom:calc(86px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--ink);color:var(--bg);border-radius:99px;padding:10px 18px;font-weight:800;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;max-width:calc(100% - 32px);text-align:center;z-index:5}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.tabs{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(440px,100%);background:var(--card);display:flex;justify-content:space-around;padding:8px 6px calc(8px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);border-radius:20px 20px 0 0;box-shadow:0 -6px 20px rgba(29,95,224,.08)}
+.tabs button{background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 4px;color:var(--muted);font-size:.72rem;font-weight:800;border-radius:12px;flex:1}
+.tabs button[aria-current="page"]{color:var(--blue)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+</head><body>
+<div class="app">
+  <section id="s-life" class="stack"></section>
+  <section id="s-rout" class="stack hide"></section>
+  <section id="s-gram" class="stack hide"></section>
+  <section id="s-prog" class="stack hide"></section>
+</div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<nav class="tabs" aria-label="Main">
+  <button data-go="life"></button>
+  <button data-go="rout"></button>
+  <button data-go="gram"></button>
+  <button data-go="prog"></button>
+</nav>
+
+<script>
+(function(){
+  /* =====================  CONTENT  ===================== */
+  /* "My day": each sentence is a list of [English, French] pieces. */
+  var DAYS={
+    hier:{label:'Hier',q:'What did you do yesterday?',qfr:"Qu'est-ce que tu as fait hier ?",stem:['Yesterday,','Hier,'],opts:[
+      {en:'I visited my grandma',segs:[['I',"j'ai"],['visited','rendu visite à'],['my','ma'],['grandma','grand-mère']]},
+      {en:'I worked',segs:[['I',"j'ai"],['worked','travaillé']]},
+      {en:'I saw a friend',segs:[['I',"j'ai"],['saw','vu'],['a','un'],['friend','ami']]},
+      {en:'I cooked',segs:[['I',"j'ai"],['cooked','cuisiné']]},
+      {en:'I ate pasta',segs:[['I',"j'ai"],['ate','mangé'],['pasta','des pâtes']]},
+      {en:'I watched TV',segs:[['I',"j'ai"],['watched','regardé'],['TV','la télé']]}]},
+    aujourdhui:{label:"Aujourd'hui",q:'What are you doing today?',qfr:"Qu'est-ce que tu fais aujourd'hui ?",stem:['Today,',"Aujourd'hui,"],opts:[
+      {en:'I stay home',segs:[['I','je'],['stay','reste'],['home','à la maison']]},
+      {en:'I work',segs:[['I','je'],['work','travaille']]},
+      {en:'I see my family',segs:[['I','je'],['see','vois'],['my','ma'],['family','famille']]},
+      {en:'I cook',segs:[['I','je'],['cook','cuisine']]},
+      {en:'I call Mum',segs:[['I','je'],['call','téléphone à'],['Mum','maman']]},
+      {en:'I go for a walk',segs:[['I','je'],['go for a walk','me promène']]}]},
+    demain:{label:'Demain',q:'What will you do tomorrow?',qfr:"Qu'est-ce que tu vas faire demain ?",stem:['Tomorrow,','Demain,'],opts:[
+      {en:"I'm going to work",segs:[["I'm going to",'je vais'],['work','travailler']]},
+      {en:"I'm going to see a friend",segs:[["I'm going to",'je vais'],['see','voir'],['a','un'],['friend','ami']]},
+      {en:"I'm going to rest",segs:[["I'm going to",'je vais'],['rest','me reposer']]},
+      {en:"I'm going to cook",segs:[["I'm going to",'je vais'],['cook','cuisiner']]},
+      {en:"I'm going to eat with Mamie",segs:[["I'm going to",'je vais'],['eat','manger'],['with','avec'],['Mamie','mamie']]},
+      {en:"I'm going to learn French",segs:[["I'm going to",'je vais'],['learn','apprendre'],['French','le français']]}]}
+  };
+  var TENSES=['hier','aujourdhui','demain'];
+
+  /* Activities for "Routines". act(id, type, usual time, [English past, present, infinitive],
+     [French past, present, infinitive, aux], [[English, French] pieces after the verb])
+     aux: 'a' = avoir (j'ai + participle), 'e' = être or reflexive. {e} adds a feminine e. {un ami|une amie} picks by gender. */
+  var ACT={};
+  function act(id,type,t,en,fr,obj){ACT[id]={id:id,type:type,t:t,en:en,fr:fr,obj:obj||[]}}
+  var AVOIR='a',ETRE='e';
+  act('wake','home','07:00',['woke up','wake up','wake up'],['me suis réveillé{e}','me réveille','me réveiller',ETRE]);
+  act('getup','home','07:00',['got up','get up','get up'],['me suis levé{e}','me lève','me lever',ETRE]);
+  act('shower','home','07:10',['took','take','take'],['pris','prends','prendre',AVOIR],[['a shower','une douche']]);
+  act('dressed','home','06:45',['got dressed','get dressed','get dressed'],['me suis habillé{e}',"m'habille","m'habiller",ETRE]);
+  act('hair','home','06:50',['did my hair','do my hair','do my hair'],['me suis coiffé{e}','me coiffe','me coiffer',ETRE]);
+  act('ready','school','07:15',['got ready','get ready','get ready'],['me suis préparé{e}','me prépare','me préparer',ETRE],[['for school',"pour l'école"]]);
+  act('breakfast','food','07:30',['had','have','have'],['pris','prends','prendre',AVOIR],[['breakfast','le petit déjeuner']]);
+  act('cereal','food','07:05',['ate','eat','eat'],['mangé','mange','manger',AVOIR],[['cereal','des céréales']]);
+  act('pancakes','food','08:40',['ate','eat','eat'],['mangé','mange','manger',AVOIR],[['pancakes','des crêpes']]);
+  act('coffee','food','06:35',['made','make','make'],['fait','fais','faire',AVOIR],[['coffee','du café']]);
+  act('tea','food','06:05',['drank','drink','drink'],['bu','bois','boire',AVOIR],[['tea','du thé']]);
+  act('makebreakfast','food','08:00',['made','make','make'],['préparé','prépare','préparer',AVOIR],[['breakfast','le petit déjeuner']]);
+  act('teabreakfast','food','08:00',['made','make','make'],['préparé','prépare','préparer',AVOIR],[['tea and breakfast','le thé et le petit déjeuner']]);
+  act('lunchmake','food','12:00',['made','make','make'],['préparé','prépare','préparer',AVOIR],[['lunch','le déjeuner']]);
+  act('lunchcolleagues','food','12:30',['had lunch','have lunch','have lunch'],['déjeuné','déjeune','déjeuner',AVOIR],[['with colleagues','avec mes collègues']]);
+  act('lunchfriend','food','13:00',['met','meet','meet'],['retrouvé','retrouve','retrouver',AVOIR],[['a friend','{un ami|une amie}'],['for lunch','pour déjeuner']]);
+  act('lunchbreak','work','13:00',['took','take','take'],['pris','prends','prendre',AVOIR],[['my lunch break','ma pause déjeuner']]);
+  act('lunchfamily','family','12:30',['had lunch','have lunch','have lunch'],['déjeuné','déjeune','déjeuner',AVOIR],[['with my family','en famille']]);
+  act('dinnerfriends','family','19:00',['had dinner','have dinner','have dinner'],['dîné','dîne','dîner',AVOIR],[['with friends','avec des amis']]);
+  act('dinnercook','home','20:00',['made','make','make'],['préparé','prépare','préparer',AVOIR],[['dinner','le dîner']]);
+  act('dinnerfamily','family','19:00',['made','make','make'],['préparé','prépare','préparer',AVOIR],[['dinner for the family','le dîner pour la famille']]);
+  act('helpdinner','family','17:30',['helped','help','help'],['aidé','aide','aider',AVOIR],[['prepare','à préparer'],['dinner','le dîner']]);
+  act('pizza','food','18:00',['ordered','order','order'],['commandé','commande','commander',AVOIR],[['a pizza','une pizza'],['with friends','avec mes amis']]);
+  act('goschool','school','08:30',['went','go','go'],['suis allé{e}','vais','aller',ETRE],[['to school',"à l'école"]]);
+  act('lessons','school','08:15',['went','go','go'],['suis allé{e}','vais','aller',ETRE],[['to lessons','en cours']]);
+  act('college','school','08:30',['went','go','go'],['suis allé{e}','vais','aller',ETRE],[['to class','en cours']]);
+  act('gowork','work','08:00',['went','go','go'],['suis allé{e}','vais','aller',ETRE],[['to work','au travail']]);
+  act('drivework','work','07:30',['went','go','go'],['suis allé{e}','vais','aller',ETRE],[['to work by car','au travail en voiture']]);
+  act('gym','hobbies','17:30',['went','go','go'],['suis allé{e}','vais','aller',ETRE],[['to the gym','à la salle de sport']]);
+  act('artclub','school','15:45',['went','go','go'],['suis allé{e}','vais','aller',ETRE],[['to art club',"au club d'art"]]);
+  act('market','shopping','11:30',['went','go','go'],['suis allé{e}','vais','aller',ETRE],[['to the market','au marché']]);
+  act('diy','shopping','11:00',['went','go','go'],['suis allé{e}','vais','aller',ETRE],[['to the DIY shop','au magasin de bricolage']]);
+  act('mall','shopping','12:00',['met','meet','meet'],['retrouvé','retrouve','retrouver',AVOIR],[['friends','mes amis'],['at the shopping centre','au centre commercial']]);
+  act('groceries','shopping','10:30',['did','do','do'],['fait','fais','faire',AVOIR],[['the shopping','les courses']]);
+  act('pickupgroceries','shopping','17:00',['did','do','do'],['fait','fais','faire',AVOIR],[['some shopping','des courses']]);
+  act('shoppingfriend','shopping','16:00',['went shopping','go shopping','go shopping'],['fait','fais','faire',AVOIR],[['','du shopping'],['with a friend','avec {un ami|une amie}']]);
+  act('washcar','home','09:30',['washed','wash','wash'],['lavé','lave','laver',AVOIR],[['the car','la voiture']]);
+  act('fixshelf','home','14:00',['fixed','fix','fix'],['réparé','répare','réparer',AVOIR],[['a shelf','une étagère']]);
+  act('tidyroom','home','10:30',['tidied','tidy','tidy'],['rangé','range','ranger',AVOIR],[['my bedroom','ma chambre']]);
+  act('cleanhouse','home','16:00',['cleaned','clean','clean'],['nettoyé','nettoie','nettoyer',AVOIR],[['the house','la maison']]);
+  act('laundry','home','08:30',['did','do','do'],['fait','fais','faire',AVOIR],[['the laundry','la lessive']]);
+  act('homework','school','17:00',['finished','finish','finish'],['fini','finis','finir',AVOIR],[['my homework','mes devoirs']]);
+  act('studymaths','school','18:30',['studied','study','study'],['révisé','révise','réviser',AVOIR],[['for a maths test','pour un contrôle de maths']]);
+  act('startwork','work','09:00',['started','start','start'],['commencé','commence','commencer',AVOIR],[['working','à travailler'],['on my laptop','sur mon ordinateur']]);
+  act('finishwork','work','16:30',['finished','finish','finish'],['fini','finis','finir',AVOIR],[['work','mon travail']]);
+  act('exercise','hobbies','07:40',['did','do','do'],['fait','fais','faire',AVOIR],[['some exercise','du sport']]);
+  act('football','hobbies','15:30',['played','play','play'],['joué','joue','jouer',AVOIR],[['football','au football'],['with friends','avec mes amis']]);
+  act('basketball','hobbies','15:30',['played','play','play'],['joué','joue','jouer',AVOIR],[['basketball','au basket']]);
+  act('videogames','hobbies','22:00',['played','play','play'],['joué','joue','jouer',AVOIR],[['video games','aux jeux vidéo']]);
+  act('bicycle','hobbies','10:00',['rode','ride','ride'],['fait','fais','faire',AVOIR],[['my bicycle','du vélo']]);
+  act('walkdog','hobbies','09:30',['walked','walk','walk'],['promené','promène','promener',AVOIR],[['my dog','mon chien']]);
+  act('gardening','hobbies','15:00',['did','do','do'],['fait','fais','faire',AVOIR],[['some gardening','du jardinage']]);
+  act('walkoutside','hobbies','16:45',['went for','go for','go for'],['fait','fais','faire',AVOIR],[['a walk','une promenade']]);
+  act('music','relaxing','16:00',['listened to','listen to','listen to'],['écouté','écoute','écouter',AVOIR],[['music','de la musique']]);
+  act('readbook','relaxing','20:30',['read','read','read'],['lu','lis','lire',AVOIR],[['a book','un livre']]);
+  act('readstory','relaxing','20:00',['read','read','read'],['lu','lis','lire',AVOIR],[['a story','une histoire']]);
+  act('videos','relaxing','21:30',['watched','watch','watch'],['regardé','regarde','regarder',AVOIR],[['videos','des vidéos']]);
+  act('tv','relaxing','20:30',['watched','watch','watch'],['regardé','regarde','regarder',AVOIR],[['TV','la télé']]);
+  act('film','relaxing','20:30',['watched','watch','watch'],['regardé','regarde','regarder',AVOIR],[['a film','un film']]);
+  act('familyfilm','family','20:00',['had','have','have'],['fait','fais','faire',AVOIR],[['a family film night','une soirée cinéma en famille']]);
+  act('bath','relaxing','19:30',['had','have','have'],['pris','prends','prendre',AVOIR],[['a bath','un bain']]);
+  act('gobed','home','19:45',['went to bed','go to bed','go to bed'],['me suis couché{e}','me couche','me coucher',ETRE]);
+  act('sleepin','relaxing','09:00',['slept','sleep','sleep'],['fait','fais','faire',AVOIR],[['late','la grasse matinée']]);
+  act('grandparents','family','15:00',['visited','visit','visit'],['rendu visite à','rends visite à','rendre visite à',AVOIR],[['my grandparents','mes grands-parents']]);
+
+  /* Twelve people, each with a usual routine on one day (usual day: hier, aujourdhui or demain). g = grammatical gender for agreements. */
+  var PERSONAS=[
+    {id:'p1',label:'Boy, 8',g:'m',day:'hier',items:[['wake','07:00'],['cereal','07:05'],['goschool','08:30'],['football','15:30'],['homework','17:00'],['bath','19:30'],['gobed','19:45']]},
+    {id:'p2',label:'Girl, 15',g:'f',day:'hier',items:[['dressed','06:45'],['hair','06:50'],['lessons','08:15'],['shoppingfriend','16:00'],['studymaths','18:30'],['videos','21:30']]},
+    {id:'p3',label:'Man, 32',g:'m',day:'hier',items:[['shower','06:30'],['coffee','06:35'],['gowork','08:00'],['lunchcolleagues','12:30'],['gym','17:30'],['dinnercook','20:00'],['tv','20:30']]},
+    {id:'p4',label:'Woman, 45',g:'f',day:'hier',items:[['breakfast','08:00'],['laundry','08:30'],['groceries','10:30'],['lunchfriend','13:00'],['cleanhouse','16:00'],['readbook','20:30']]},
+    {id:'p5',label:'Girl, 10',g:'f',day:'aujourdhui',items:[['ready','07:15'],['lessons','08:45'],['artclub','15:45'],['helpdinner','17:30'],['readstory','20:00']]},
+    {id:'p6',label:'Boy, 17',g:'m',day:'aujourdhui',items:[['getup','07:00'],['shower','07:10'],['college','08:30'],['basketball','15:30'],['pizza','18:00'],['videogames','22:00']]},
+    {id:'p7',label:'Woman, 28',g:'f',day:'aujourdhui',items:[['wake','07:30'],['exercise','07:40'],['startwork','09:00'],['lunchmake','12:00'],['finishwork','16:30'],['walkoutside','16:45'],['dinnerfriends','19:30']]},
+    {id:'p8',label:'Man, 50',g:'m',day:'aujourdhui',items:[['wake','06:00'],['tea','06:05'],['drivework','07:30'],['lunchbreak','13:00'],['pickupgroceries','17:00'],['dinnerfamily','19:00']]},
+    {id:'p9',label:'Boy, 11',g:'m',day:'demain',items:[['wake','08:30'],['pancakes','08:40'],['bicycle','10:00'],['lunchfamily','12:30'],['grandparents','15:00'],['film','20:30']]},
+    {id:'p10',label:'Girl, 16',g:'f',day:'demain',items:[['sleepin','09:00'],['tidyroom','10:30'],['mall','12:00'],['music','16:00'],['familyfilm','20:00']]},
+    {id:'p11',label:'Man, 38',g:'m',day:'demain',items:[['makebreakfast','08:00'],['washcar','09:30'],['diy','11:00'],['fixshelf','14:00'],['dinnerfriends','19:00']]},
+    {id:'p12',label:'Woman, 60',g:'f',day:'demain',items:[['teabreakfast','08:00'],['walkdog','09:30'],['market','11:30'],['gardening','15:00'],['tv','19:30']]}
+  ];
+  var TYPES=[['any','Any'],['school','School'],['work','Work'],['shopping','Shopping'],['family','Family'],['hobbies','Hobbies'],['relaxing','Relaxing'],['home','At home'],['food','Food']];
+
+  var GTOPICS={
+    past:{chip:"j'ai + verb",title:"The past tense: j'ai + verb",day:'hier',stem:'Hier',
+      rows:[["j'ai","visité","ma grand-mère","I visited my grandma"],["j'ai","travaillé","","I worked"],["j'ai","vu","un ami","I saw a friend"],["j'ai","cuisiné","","I cooked"]],
+      more:[["j'ai","mangé","une pomme","I ate an apple"],["j'ai","fini","mon travail","I finished my work"],["j'ai","parlé","français","I spoke French"]],
+      why:"To talk about actions in the past, French often uses <b>j'ai</b> followed by the <b>past participle</b> of the verb: <i>travailler</i> becomes <i>travaillé</i>.",
+      note:'Some verbs use <b>je suis</b> instead (<i>je suis allé</i>, <i>je me suis levé</i>). You will meet them in Routines. If the speaker is a woman, the participle gets an <b>e</b>: <i>je suis allée</i>.'},
+    future:{chip:'je vais + verb',title:'The near future: je vais + verb',day:'demain',stem:'Demain',
+      rows:[["je vais","travailler","","I'm going to work"],["je vais","voir","un ami","I'm going to see a friend"],["je vais","me reposer","","I'm going to rest"],["je vais","cuisiner","","I'm going to cook"]],
+      more:[["je vais","manger","une pizza","I'm going to eat a pizza"],["je vais","finir","mon travail","I'm going to finish my work"],["je vais","parler","français","I'm going to speak French"]],
+      why:'To say what you are going to do, French uses a form of <b>aller</b> (to go) followed by the verb in its <b>infinitive</b>. The second verb does not change: <i>je vais travailler</i>, just like English "I\'m going to work".',
+      note:'With other people the first part changes: <i>tu vas</i> (you are going to), <i>il va</i> (he is going to). We meet those later.'}
+  };
+
+  /* Levels and badges */
+  var LEVELS=['Débutant','Curieux','Bavard','Conteur','Narrateur','Maître du temps','Légende'];
+  var GOAL=3, XP={built:5,done:10,said:20,goalDay:30};
+  var BADGES=[
+    {id:'first',n:'Premier pas',en:'Build your first sentence',ic:'star',ok:function(s){return s.built>=1}},
+    {id:'voice',n:'À voix haute',en:'Say a sentence out loud',ic:'mic',ok:function(s){return s.said>=1}},
+    {id:'goal',n:'Journée réussie',en:'Reach the daily goal',ic:'target',ok:function(s){return s.goalDays>=1}},
+    {id:'streak3',n:'Trois jours de suite',en:'Practise 3 days in a row',ic:'flame',ok:function(s){return s.streak>=3}},
+    {id:'streak7',n:'Une semaine !',en:'Practise 7 days in a row',ic:'flame',ok:function(s){return s.streak>=7}},
+    {id:'hier5',n:"Maître d'hier",en:'Say 5 sentences about yesterday',ic:'back',ok:function(s){return s.saidBy.hier>=5}},
+    {id:'auj5',n:"Maître d'aujourd'hui",en:'Say 5 sentences about today',ic:'sun',ok:function(s){return s.saidBy.aujourdhui>=5}},
+    {id:'dem5',n:'Maître de demain',en:'Say 5 sentences about tomorrow',ic:'next',ok:function(s){return s.saidBy.demain>=5}},
+    {id:'travel',n:'Voyageur du temps',en:'Go to the next day 3 times',ic:'next',ok:function(s){return s.nav>=3}},
+    {id:'others',n:'Curieux des autres',en:"Try 5 different people's routines",ic:'users',ok:function(s){return s.personas>=5}},
+    {id:'fifty',n:'Cinquante phrases',en:'Build 50 sentences',ic:'star',ok:function(s){return s.built>=50}}
+  ];
+
+  /* =====================  STORAGE  ===================== */
+  var mem={};
+  function load(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return k in mem?mem[k]:d}}
+  function save(k,v){mem[k]=v;try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+  var log=load('vie_log',[]);     // {ts,type:'built'|'done'|'said'|'nav'|'persona',day,ref,key}
+  var off=load('vie_off',0);      // days between today and the day you are practising
+
+  /* =====================  DATES  ===================== */
+  function pad(n){return (n<10?'0':'')+n}
+  function addDays(d,n){var x=new Date(d);x.setDate(x.getDate()+n);return x}
+  function refDate(){var d=new Date();d.setHours(0,0,0,0);return addDays(d,off)}
+  function iso(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+  function cap(s){return s.charAt(0).toUpperCase()+s.slice(1)}
+  function fmtLong(d){try{return cap(d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'}))}catch(e){return iso(d)}}
+  function fmtShort(d){try{return d.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric'})}catch(e){return iso(d)}}
+  function dayDate(k){return addDays(refDate(),k==='hier'?-1:k==='demain'?1:0)}
+
+  /* =====================  GAME STATE  ===================== */
+  function summary(){
+    var s={built:0,done:0,said:0,nav:0,saidBy:{hier:0,aujourdhui:0,demain:0},goalDays:0,streak:0,personas:0},refs={},pers={},days={};
+    log.forEach(function(e){
+      if(e.type==='built')s.built++;
+      else if(e.type==='done')s.done++;
+      else if(e.type==='nav')s.nav++;
+      else if(e.type==='persona')pers[e.key]=1;
+      else if(e.type==='said'){s.said++;if(s.saidBy[e.day]!==undefined)s.saidBy[e.day]++;if(e.ref)refs[e.ref]=(refs[e.ref]||0)+1;days[iso(new Date(e.ts))]=1}
+    });
+    Object.keys(refs).forEach(function(r){if(refs[r]>=GOAL)s.goalDays++});
+    s.personas=Object.keys(pers).length;
+    var d=new Date();d.setHours(0,0,0,0);if(!days[iso(d)])d=addDays(d,-1);
+    while(days[iso(d)]){s.streak++;d=addDays(d,-1)}
+    s.xp=s.built*XP.built+s.done*XP.done+s.said*XP.said+s.goalDays*XP.goalDay;
+    s.level=Math.floor(Math.sqrt(s.xp/25))+1;
+    return s;
+  }
+  function badgeIds(s){return BADGES.filter(function(b){return b.ok(s)}).map(function(b){return b.id})}
+  function goalNow(){var r=iso(refDate());return log.filter(function(e){return e.type==='said'&&e.ref===r}).length}
+  function has(type,key){var r=iso(refDate());return log.some(function(e){return e.type===type&&e.key===key&&e.ref===r})}
+  var toastTimer;
+  function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.classList.remove('on')},2400)}
+  function award(type,day,key,label){
+    var before=summary(),bb=badgeIds(before),g0=goalNow();
+    log.push({ts:Date.now(),type:type,day:day,ref:iso(refDate()),key:key||''});save('vie_log',log);
+    var after=summary(),msgs=[label];
+    if(after.level>before.level)msgs.push('Niveau '+after.level+' : '+LEVELS[Math.min(after.level-1,LEVELS.length-1)]);
+    badgeIds(after).forEach(function(id){if(bb.indexOf(id)<0)msgs.push('Badge : '+BADGES.filter(function(b){return b.id===id})[0].n)});
+    if(g0<GOAL&&goalNow()>=GOAL)msgs.push('Objectif du jour atteint ! +'+XP.goalDay+' XP');
+    if(msgs[0]||msgs.length>1)toast(msgs.filter(Boolean).join(' · '));
+  }
+
+  /* =====================  HELPERS  ===================== */
+  var $=function(s){return document.querySelector(s)};
+  function say(text){try{var s=window.speechSynthesis;s.cancel();var u=new SpeechSynthesisUtterance(text);u.lang='fr-FR';u.rate=0.85;
+    var v=(s.getVoices()||[]).filter(function(v){return v.lang&&v.lang.toLowerCase().indexOf('fr')===0})[0];if(v)u.voice=v;s.speak(u)}catch(e){}}
+  var I={
+    life:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+    rout:'<circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14a5 5 0 0 1 5 5"/>',
+    users:'<circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14a5 5 0 0 1 5 5"/>',
+    gram:'<path d="M4 4h12a4 4 0 0 1 4 4v12H8a4 4 0 0 1-4-4zM8 9h8M8 13h6"/>',
+    prog:'<path d="M3 20h18M6 20v-6M12 20V9M18 20V4"/>',
+    play:'<path d="M8 5v14l11-7z" fill="#fff" stroke="none"/>',
+    left:'<path d="M15 5l-7 7 7 7"/>',
+    right:'<path d="M9 5l7 7-7 7"/>',
+    check:'<path d="M5 12l5 5 9-10"/>',
+    star:'<path d="M12 3l2.7 5.6 6.1.8-4.5 4.3 1.1 6.1L12 17l-5.4 2.8 1.1-6.1L3.2 9.4l6.1-.8z" fill="currentColor"/>',
+    flame:'<path d="M12 3c1 4 5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 1-9z" fill="currentColor"/>',
+    target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/>',
+    mic:'<rect x="9" y="3" width="6" height="11" rx="3" fill="currentColor"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/>',
+    back:'<path d="M3 12h14M9 6l-6 6 6 6"/>',
+    next:'<path d="M21 12H7M15 6l6 6-6 6"/>',
+    sun:'<circle cx="12" cy="12" r="4" fill="currentColor"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/>',
+    lock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>'};
+  function svg(n,s){return '<svg width="'+(s||22)+'" height="'+(s||22)+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+I[n]+'</svg>'}
+  function frTokens(s){return s.replace(/\[\[(.+?)\]\]/g,function(_,w){return '<button class="fr" data-say="'+esc(w)+'">'+w+'</button>'})}
+  function esc(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')}
+
+  /* Build the [English, French] pieces of one activity in one tense. */
+  function timeSeg(t){var p=t.split(':'),h=+p[0],m=+p[1];return ['At '+(h%12||12)+':'+pad(m)+' '+(h>=12?'PM':'AM')+',','À '+h+' h'+(m?' '+pad(m):'')+',']}
+  function actSegs(a,tense,fem,time){
+    var sub=function(s){return s.replace(/\{e\}/g,fem?'e':'').replace(/\{([^|}]*)\|([^}]*)\}/g,function(_,m,f){return fem?f:m})};
+    var v=a.fr,segs=[];
+    if(tense==='hier'){
+      if(v[3]==='a')segs.push(['I',"j'ai"],[a.en[0],sub(v[0])]);else segs.push(['I','je'],[a.en[0],sub(v[0])]);
+    }else if(tense==='aujourdhui'){
+      var p=sub(v[1]);
+      if(/^[aeiouyâàéèêëîïôû]/i.test(p))segs.push(['I '+a.en[1],"j'"+p]);else segs.push(['I','je'],[a.en[1],p]);
+    }else segs.push(["I'm going to",'je vais'],[a.en[2],sub(v[2])]);
+    a.obj.forEach(function(o){segs.push([o[0],sub(o[1])])});
+    segs=segs.filter(function(s){return s[0]||s[1]});
+    segs.unshift(timeSeg(time||a.t));
+    return segs;
+  }
+  function plainEn(segs){return segs.slice(1).map(function(s){return s[0]}).filter(Boolean).join(' ')}
+
+  /* =====================  SENTENCE BUILDER (shared)  ===================== */
+  function newB(){return {segs:null,step:0,day:'hier',key:'',doneLogged:false}}
+  var Bd=newB(),Br=newB();
+  function builderHtml(b,sc){
+    var S=b.segs,N=S.length;b.step=Math.min(b.step,N);
+    var en=S.map(function(s){return s[0]}).filter(Boolean).join(' ')+'.';
+    var line=S.map(function(s,i){return i<b.step?'[['+s[1]+']]':s[0]}).filter(Boolean).join(' ')+'.';
+    var fr=S.map(function(s){return s[1]}).filter(Boolean).join(' ')+'.';
+    var pct=Math.round(b.step/N*100),done=b.step===N,said=has('said',b.key);
+    return '<div class="card stack"><div class="bar" role="progressbar" aria-valuenow="'+pct+'" aria-valuemin="0" aria-valuemax="100"><i style="width:'+pct+'%"></i></div>'+
+      '<p class="sentence">'+frTokens(line)+'</p><p class="tag">'+esc(en)+'</p>'+
+      '<button class="play" data-say="'+esc(fr)+'"><span class="dot">'+svg('play',18)+'</span>Listen to the French</button>'+
+      '<div class="row"><button class="btn ghost" data-bstep="-1" data-sc="'+sc+'"'+(b.step===0?' disabled':'')+'>One word back</button><button class="btn" data-bstep="1" data-sc="'+sc+'"'+(done?' disabled':'')+'>One more French word</button></div></div>'+
+      (done?'<div class="reply">That is French, and it is your life. Say it out loud to someone, or to yourself.</div><button class="btn" data-bsaid="1" data-sc="'+sc+'"'+(said?' disabled':'')+'>'+(said?'Said out loud, well done':'I said it out loud  +'+XP.said+' XP')+'</button>':'');
+  }
+
+  /* =====================  SHARED TOP: date + progress  ===================== */
+  function topHtml(){
+    var s=summary(),d=refDate(),g=Math.min(goalNow(),GOAL),C=2*Math.PI*27;
+    var lvName=LEVELS[Math.min(s.level-1,LEVELS.length-1)],lo=25*(s.level-1)*(s.level-1),hi=25*s.level*s.level;
+    var pct=Math.round((s.xp-lo)/(hi-lo)*100);
+    var next=g>=GOAL?'<div class="card stack"><div class="reply">Journée terminée ! Day complete. You earned +'+XP.goalDay+' XP.</div><button class="btn" data-nav="1">Next day '+svg('next',18)+'</button></div>':'';
+    return '<div class="dnav"><button class="arrow" data-nav="-1" aria-label="Previous day">'+svg('left',22)+'</button>'+
+      '<div class="mid"><button class="date" data-say="'+esc(fmtLong(d))+'">'+fmtLong(d)+'</button><div class="rel">'+(off===0?"Aujourd'hui · today":(off>0?'+'+off:off)+' day'+(Math.abs(off)===1?'':'s')+' · <button data-nav="0">back to today</button>')+'</div></div>'+
+      '<button class="arrow" data-nav="1" aria-label="Next day">'+svg('right',22)+'</button></div>'+
+      '<div class="card hud"><div class="ringbox"><svg viewBox="0 0 62 62"><circle cx="31" cy="31" r="27" stroke="var(--blue-soft)"/><circle cx="31" cy="31" r="27" stroke="'+(g>=GOAL?'var(--good)':'var(--blue)')+'" stroke-linecap="round" stroke-dasharray="'+C+'" stroke-dashoffset="'+(C*(1-g/GOAL))+'"/></svg><b>'+g+'/'+GOAL+'</b></div>'+
+      '<div class="xp"><div class="lv"><span>Niv. '+s.level+' · '+lvName+'</span><small>'+s.xp+' XP</small></div><div class="bar" role="progressbar" aria-valuenow="'+pct+'" aria-valuemin="0" aria-valuemax="100"><i style="width:'+pct+'%"></i></div><div class="tag">Say '+GOAL+' sentences out loud today</div></div>'+
+      '<div class="streak"><span style="display:flex;align-items:center;gap:2px">'+svg('flame',22)+s.streak+'</span><small>days</small></div></div>'+next;
+  }
+
+  /* =====================  MY DAY  ===================== */
+  var cur='life',day='hier',pick=null;
+  function daySeg(label,k){return '<button data-day="'+k+'" aria-pressed="'+(k===day)+'">'+label+'<small>'+fmtShort(dayDate(k))+'</small></button>'}
+  function rLife(){
+    var D=DAYS[day],card='';
+    if(pick!==null&&Bd.segs)card=builderHtml(Bd,'d')+(day!=='aujourdhui'?'<button class="btn ghost" data-pat="'+(day==='hier'?'past':'future')+'">Why “'+(day==='hier'?"j'ai":'je vais')+'”? See the pattern</button>':'');
+    else card='<div class="card"><p class="tag">Pick one. Your sentence appears here, and you turn it into French one word at a time.</p></div>';
+    $('#s-life').innerHTML=
+      '<div class="logo">Ma vie en français</div>'+topHtml()+
+      '<div class="seg">'+TENSES.map(function(k){return daySeg(DAYS[k].label,k)}).join('')+'</div>'+
+      '<div class="card stack"><p style="font-weight:700;font-size:1.15rem">'+D.q+'</p><p class="tag">'+frTokens('[['+D.qfr+']]')+'</p>'+
+      '<div class="eyebrow">Choose what fits your life</div><div class="opts">'+D.opts.map(function(x,i){return '<button data-pick="'+i+'" aria-pressed="'+(i===pick)+'">'+x.en+'</button>'}).join('')+'</div></div>'+
+      card;
+  }
+
+  /* =====================  ROUTINES  ===================== */
+  var Rs={pid:'p1',day:'hier',type:'any',rows:null,sel:null,shuffled:false};
+  function persona(id){return PERSONAS.filter(function(p){return p.id===id})[0]}
+  function rowsNow(){var P=persona(Rs.pid);return Rs.rows||P.items}
+  function rowKey(i){var r=rowsNow()[i];return 'r:'+Rs.pid+':'+Rs.day+':'+r[0]+':'+r[1]}
+  function pickPersona(id){
+    Rs.pid=id;Rs.day=persona(id).day;Rs.rows=null;Rs.sel=null;Rs.shuffled=false;Br=newB();
+    if(!log.some(function(e){return e.type==='persona'&&e.key===id})){
+      var b=summary(),bb=badgeIds(b);log.push({ts:Date.now(),type:'persona',day:'',ref:iso(refDate()),key:id});save('vie_log',log);
+      badgeIds(summary()).forEach(function(x){if(bb.indexOf(x)<0)toast('Badge : '+BADGES.filter(function(q){return q.id===x})[0].n)});
+    }
+  }
+  function shuffle(){
+    var P=PERSONAS[Math.floor(Math.random()*PERSONAS.length)];
+    var pool=Object.keys(ACT).filter(function(k){return Rs.type==='any'||ACT[k].type===Rs.type});
+    for(var i=pool.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=pool[i];pool[i]=pool[j];pool[j]=t}
+    var rows=pool.slice(0,5).map(function(k){return [k,ACT[k].t]}).sort(function(a,b){return a[1]<b[1]?-1:1});
+    Rs.pid=P.id;Rs.day=TENSES[Math.floor(Math.random()*3)];Rs.rows=rows;Rs.sel=null;Rs.shuffled=true;Br=newB();
+  }
+  function selectRow(i){
+    var r=rowsNow()[i],P=persona(Rs.pid);Rs.sel=i;
+    Br={segs:actSegs(ACT[r[0]],Rs.day,P.g==='f',r[1]),step:0,day:Rs.day,key:rowKey(i),doneLogged:has('done',rowKey(i))};
+    if(!has('built',rowKey(i)))award('built',Rs.day,rowKey(i),'+'+XP.built+' XP');
+  }
+  function rRout(){
+    var P=persona(Rs.pid),rows=rowsNow(),fem=P.g==='f';
+    var list=rows.map(function(r,i){
+      var segs=actSegs(ACT[r[0]],Rs.day,fem,r[1]),ok=has('said',rowKey(i));
+      return '<button data-row="'+i+'" aria-pressed="'+(Rs.sel===i)+'"><span class="t">'+r[1]+'</span><span class="a">'+esc(plainEn(segs))+'</span><span class="ck'+(ok?' on':'')+'">'+(ok?svg('check',16):'')+'</span></button>';
+    }).join('');
+    var title=Rs.shuffled?'Random routine':P.label;
+    $('#s-rout').innerHTML=
+      '<div class="logo">Routines</div>'+topHtml()+
+      '<div class="chips" aria-label="People">'+PERSONAS.map(function(p){return '<button data-pid="'+p.id+'" aria-pressed="'+(!Rs.shuffled&&p.id===Rs.pid)+'">'+p.label+'</button>'}).join('')+'</div>'+
+      '<div class="seg">'+TENSES.map(function(k){return '<button data-rday="'+k+'" aria-pressed="'+(k===Rs.day)+'">'+DAYS[k].label+'<small>'+fmtShort(dayDate(k))+'</small></button>'}).join('')+'</div>'+
+      (Rs.sel!==null&&Br.segs?builderHtml(Br,'r'):'')+
+      '<div class="card"><div class="eyebrow" style="margin-bottom:4px">'+title+(Rs.shuffled?' · '+P.label:'')+(fem?' · feminine endings':'')+'</div><div class="tl">'+list+'</div></div>'+
+      '<div class="card stack"><div class="eyebrow">Mix and match</div><div class="chips wrap">'+TYPES.map(function(t){return '<button data-type="'+t[0]+'" aria-pressed="'+(Rs.type===t[0])+'">'+t[1]+'</button>'}).join('')+'</div><button class="btn ghost" data-shuffle="1">Make a random routine</button></div>';
+  }
+
+  /* =====================  PATTERNS  ===================== */
+  var gTopic='past',gMore=false;
+  function gramRow(r,stem){
+    var s=stem+', '+r[0]+' '+r[1]+(r[2]?' '+r[2]:'');
+    return '<button class="gr" data-say="'+esc(s)+'"><span class="aux">'+r[0]+'</span> <span class="pp">'+r[1]+'</span>'+(r[2]?' '+r[2]:'')+'<small>'+r[3]+'</small></button>';
+  }
+  function builtFor(dk){return log.filter(function(e){return e.type==='built'&&e.day===dk}).length}
+  function rGram(){
+    var T=GTOPICS[gTopic],n=builtFor(T.day);
+    $('#s-gram').innerHTML=
+      '<div class="chips">'+Object.keys(GTOPICS).map(function(k){return '<button data-gt="'+k+'" aria-pressed="'+(k===gTopic)+'">'+GTOPICS[k].chip+'</button>'}).join('')+'</div>'+
+      '<h1 style="font-size:1.7rem">'+T.title+'</h1>'+
+      '<div class="reply'+(n>=3?'':' soft')+'">'+(n>=3?'You have built '+n+' sentences with '+T.stem+'. Now the pattern will make sense.':'You have built '+n+' sentence'+(n===1?'':'s')+' with '+T.stem+' so far. Build 3 and this will click.')+'</div>'+
+      '<div class="card stack"><div class="eyebrow">What you have already used</div>'+T.rows.map(function(r){return gramRow(r,T.stem)}).join('')+(gMore?T.more.map(function(r){return gramRow(r,T.stem)}).join(''):'')+'</div>'+
+      '<div class="card stack"><div class="eyebrow">Why?</div><p>'+T.why+'</p><p class="tag">'+T.note+'</p></div>'+
+      '<button class="btn" data-more="1">'+(gMore?'Show fewer examples':'See more examples')+'</button>';
+  }
+
+  /* =====================  PROGRESS  ===================== */
+  function rProg(){
+    var s=summary(),have=badgeIds(s);
+    $('#s-prog').innerHTML=
+      '<div class="logo">Progress</div>'+topHtml()+
+      '<div class="row"><div class="card stat"><span class="lbl">Said out loud</span><span class="num">'+s.said+'</span></div><div class="card stat"><span class="lbl">Sentences built</span><span class="num">'+s.built+'</span></div></div>'+
+      '<div class="row"><div class="card stat"><span class="lbl">Yesterday</span><span class="num">'+s.saidBy.hier+'</span></div><div class="card stat"><span class="lbl">Today</span><span class="num">'+s.saidBy.aujourdhui+'</span></div><div class="card stat"><span class="lbl">Tomorrow</span><span class="num">'+s.saidBy.demain+'</span></div></div>'+
+      '<div class="eyebrow">Badges · '+have.length+' of '+BADGES.length+'</div>'+
+      '<div class="badges">'+BADGES.map(function(b){var on=have.indexOf(b.id)>=0;
+        return '<div class="badge'+(on?'':' lock')+'"><span class="ic">'+svg(on?b.ic:'lock',20)+'</span><b>'+b.n+'</b><small>'+b.en+'</small></div>'}).join('')+'</div>';
+  }
+
+  /* =====================  NAVIGATION  ===================== */
+  var LABEL={life:'My day',rout:'Routines',gram:'Patterns',prog:'Progress'};
+  var R={life:rLife,rout:rRout,gram:rGram,prog:rProg},SEC={life:'s-life',rout:'s-rout',gram:'s-gram',prog:'s-prog'};
+  function go(k,keepScroll){
+    cur=k;Object.keys(SEC).forEach(function(x){$('#'+SEC[x]).classList.toggle('hide',x!==k)});
+    R[k]();
+    document.querySelectorAll('.tabs button').forEach(function(b){var t=b.dataset.go;b.innerHTML=svg(t,24)+'<span>'+LABEL[t]+'</span>';if(t===k)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});
+    if(!keepScroll)window.scrollTo(0,0);
+  }
+  function getB(sc){return sc==='r'?Br:Bd}
+
+  document.addEventListener('click',function(ev){
+    var t=ev.target.closest('button');if(!t)return;var d=t.dataset;
+    if(d.say){say(d.say);return}
+    if(d.go){go(d.go);return}
+    if(d.nav!==undefined){
+      var n=+d.nav;
+      if(n===0)off=0;else off+=n;
+      save('vie_off',off);
+      if(n===1){log.push({ts:Date.now(),type:'nav',day:'',ref:iso(refDate()),key:''});save('vie_log',log);toast('Jour suivant · '+fmtLong(refDate()))}
+      go(cur,true);return;
+    }
+    if(d.day){day=d.day;pick=null;Bd=newB();go('life',true);return}
+    if(d.pick!==undefined){
+      pick=+d.pick;var key='m:'+day+':'+pick;
+      Bd={segs:[DAYS[day].stem].concat(DAYS[day].opts[pick].segs),step:0,day:day,key:key,doneLogged:has('done',key)};
+      if(!has('built',key))award('built',day,key,'+'+XP.built+' XP');
+      go('life',true);return;
+    }
+    if(d.bstep){
+      var b=getB(d.sc);b.step=Math.max(0,Math.min(b.segs.length,b.step+(+d.bstep)));
+      if(b.step===b.segs.length&&!b.doneLogged&&!has('done',b.key)){b.doneLogged=true;award('done',b.day,b.key,'+'+XP.done+' XP · phrase terminée')}
+      go(cur,true);return;
+    }
+    if(d.bsaid){var b2=getB(d.sc);if(!has('said',b2.key))award('said',b2.day,b2.key,'+'+XP.said+' XP · bravo !');go(cur,true);return}
+    if(d.pat){gTopic=d.pat;gMore=false;go('gram');return}
+    if(d.gt){gTopic=d.gt;gMore=false;R.gram();return}
+    if(d.more){gMore=!gMore;R.gram();return}
+    if(d.pid){pickPersona(d.pid);go('rout',true);return}
+    if(d.rday){Rs.day=d.rday;Rs.sel=null;Br=newB();go('rout',true);return}
+    if(d.row!==undefined){selectRow(+d.row);go('rout');return}
+    if(d.type){Rs.type=d.type;go('rout',true);return}
+    if(d.shuffle){shuffle();go('rout');return}
+  });
+  try{window.speechSynthesis&&window.speechSynthesis.getVoices()}catch(e){}
+  window.__vie={ACT:ACT,PERSONAS:PERSONAS,actSegs:actSegs,TENSES:TENSES};
+  go('life');
+})();
+</script>
+
+</body></html>
